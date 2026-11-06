@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brass Rabbits — Hold-to-Fire Gun Lab</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f5ecd7;
+      --muted: #b8ad98;
+      --brass: #d59d45;
+      --brass-bright: #f2c56f;
+      --red: #9d3d32;
+      --red-hot: #d55343;
+      --panel: #171b1d;
+      --edge: #3e4648;
+      --sky: #0e1418;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body,
+    main,
+    button,
+    label,
+    output,
+    p,
+    h1 {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 50% 16%, #2c3c44 0, #182329 28%, transparent 55%),
+        linear-gradient(180deg, #111a1f 0%, #0a0e11 100%);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    main {
+      width: min(680px, 100%);
+      padding: clamp(22px, 5vw, 42px);
+      border: 1px solid var(--edge);
+      border-radius: 22px;
+      background: linear-gradient(145deg, rgba(33, 39, 41, 0.97), rgba(16, 19, 21, 0.98));
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48), inset 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--brass-bright);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(30px, 7vw, 50px);
+      line-height: 0.98;
+      letter-spacing: -0.025em;
+    }
+
+    .intro {
+      max-width: 56ch;
+      margin: 16px 0 28px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .viewer-note {
+      margin: -10px 0 26px;
+      padding: 11px 13px;
+      border: 1px solid #70552f;
+      border-radius: 10px;
+      color: #e7c98f;
+      background: rgba(104, 72, 29, 0.18);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .environment {
+      margin: -15px 0 24px;
+      color: #e6a79b;
+      font-size: 11px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .environment.ok { color: #9fc8ad; }
+
+    .controls {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 9px 16px;
+      align-items: center;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    output {
+      min-width: 128px;
+      color: var(--brass-bright);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      grid-column: 1 / -1;
+      width: 100%;
+      height: 24px;
+      margin: 0;
+      accent-color: var(--brass);
+      cursor: ew-resize;
+    }
+
+    .fire-button {
+      width: 100%;
+      min-height: 132px;
+      border: 2px solid #d06a57;
+      border-radius: 18px;
+      color: #fff5e4;
+      background:
+        radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.12), transparent 40%),
+        linear-gradient(180deg, #ae493a, #772b25);
+      box-shadow: 0 9px 0 #431b18, 0 15px 30px rgba(0, 0, 0, 0.36);
+      font: 900 clamp(20px, 5vw, 30px)/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      cursor: pointer;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 70ms ease, box-shadow 70ms ease, background 90ms ease;
+    }
+
+    .fire-button:hover { background-color: var(--red-hot); }
+
+    .fire-button[aria-pressed="true"] {
+      transform: translateY(7px);
+      background:
+        radial-gradient(circle at 50% 28%, rgba(255, 224, 159, 0.22), transparent 42%),
+        linear-gradient(180deg, #df624d, #9b3028);
+      box-shadow: 0 2px 0 #431b18, 0 7px 18px rgba(213, 83, 67, 0.24);
+    }
+
+    .status {
+      min-height: 20px;
+      margin: 17px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .status.live { color: var(--brass-bright); }
+
+    .note {
+      margin: 24px 0 0;
+      padding-top: 19px;
+      border-top: 1px solid var(--edge);
+      color: #8f9a9d;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Brass Rabbits / Audio Prototype / Compatibility v3</p>
+    <h1>Hold-to-Fire Gun Lab</h1>
+    <p class="intro">
+      Hold the red button—or the Space bar—to sustain fire. Adjust the controls while firing.
+      Frequency changes cadence, dwell changes each report's decay, and tone changes its body pitch.
+      Faint randomized brass impacts remain enabled.
+    </p>
+    <p class="viewer-note">
+      Important: Telegram and file-preview panels may disable Web Audio. Download this file and open it
+      directly in Safari, Chrome, Firefox, or Edge.
+    </p>
+    <p id="environment" class="environment">
+      JavaScript has not started. If this line remains unchanged, this viewer blocks interactive HTML.
+    </p>
+
+    <section class="controls" aria-label="Gun sound controls">
+      <div class="control">
+        <label for="frequency">Frequency</label>
+        <output id="frequency-value" for="frequency">8.5 Hz / 510 RPM</output>
+        <input id="frequency" type="range" min="3" max="15" step="0.1" value="8.5">
+      </div>
+
+      <div class="control">
+        <label for="dwell">Dwell</label>
+        <output id="dwell-value" for="dwell">75 ms</output>
+        <input id="dwell" type="range" min="25" max="180" step="1" value="75">
+      </div>
+
+      <div class="control">
+        <label for="tone">Tone</label>
+        <output id="tone-value" for="tone">260 Hz</output>
+        <input id="tone" type="range" min="90" max="900" step="5" value="260">
+      </div>
+    </section>
+
+    <button id="fire" class="fire-button" type="button" aria-pressed="false">
+      Hold to fire
+    </button>
+    <p id="status" class="status" role="status" aria-live="polite">Ready — audio starts on first press.</p>
+
+    <p class="note">
+      Procedural evaluation tool: no external recording is loaded. The two reports in each firing event
+      are slightly offset to suggest paired synchronized guns. This page tests timbre and cadence only;
+      it is not a weapon-system implementation.
+    </p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const frequency = document.querySelector("#frequency");
+      const dwell = document.querySelector("#dwell");
+      const tone = document.querySelector("#tone");
+      const frequencyValue = document.querySelector("#frequency-value");
+      const dwellValue = document.querySelector("#dwell-value");
+      const toneValue = document.querySelector("#tone-value");
+      const fireButton = document.querySelector("#fire");
+      const status = document.querySelector("#status");
+      const environment = document.querySelector("#environment");
+
+      let context = null;
+      let master = null;
+      let noiseBuffer = null;
+      let scheduler = null;
+      let nextEventTime = 0;
+      let firing = false;
+
+      function updateLabels() {
+        const hz = Number(frequency.value);
+        frequencyValue.value = `${hz.toFixed(1)} Hz / ${Math.round(hz * 60)} RPM`;
+        dwellValue.value = `${dwell.value} ms`;
+        toneValue.value = `${tone.value} Hz`;
+      }
+
+      function makeNoiseBuffer(audioContext) {
+        const buffer = audioContext.createBuffer(1, audioContext.sampleRate, audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let index = 0; index < data.length; index += 1) {
+          data[index] = Math.random() * 2 - 1;
+        }
+        return buffer;
+      }
+
+      function ensureAudio() {
+        if (context) return;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+          throw new Error("This viewer does not provide Web Audio. Open the downloaded HTML file in Safari, Chrome, Firefox, or Edge.");
+        }
+        context = new AudioContextClass();
+
+        const limiter = context.createDynamicsCompressor();
+        limiter.threshold.value = -8;
+        limiter.knee.value = 8;
+        limiter.ratio.value = 8;
+        limiter.attack.value = 0.002;
+        limiter.release.value = 0.12;
+
+        master = context.createGain();
+        master.gain.value = 0.42;
+        master.connect(limiter);
+        limiter.connect(context.destination);
+        noiseBuffer = makeNoiseBuffer(context);
+      }
+
+      function createPan(position) {
+        if (typeof context.createStereoPanner === "function") {
+          const pan = context.createStereoPanner();
+          pan.pan.value = position;
+          return pan;
+        }
+        return context.createGain();
+      }
+
+      function scheduleReport(startTime, pitchScale, panPosition, gainScale) {
+        const reportDwell = Number(dwell.value) / 1000;
+        const bodyTone = Number(tone.value) * pitchScale;
+
+        const noise = context.createBufferSource();
+        noise.buffer = noiseBuffer;
+        noise.loop = true;
+        noise.playbackRate.value = 0.88 + Math.random() * 0.24;
+
+        const crackFilter = context.createBiquadFilter();
+        crackFilter.type = "bandpass";
+        crackFilter.frequency.value = Math.min(7200, 950 + bodyTone * 4.2);
+        crackFilter.Q.value = 0.72;
+
+        const crackGain = context.createGain();
+        crackGain.gain.setValueAtTime(0.0001, startTime);
+        crackGain.gain.exponentialRampToValueAtTime(0.72 * gainScale, startTime + 0.0015);
+        crackGain.gain.exponentialRampToValueAtTime(0.16 * gainScale, startTime + reportDwell * 0.28);
+        crackGain.gain.exponentialRampToValueAtTime(0.0001, startTime + reportDwell);
+
+        const body = context.createOscillator();
+        body.type = "sawtooth";
+        body.frequency.setValueAtTime(bodyTone * 1.16, startTime);
+        body.frequency.exponentialRampToValueAtTime(Math.max(45, bodyTone * 0.62), startTime + reportDwell);
+
+        const bodyGain = context.createGain();
+        bodyGain.gain.setValueAtTime(0.0001, startTime);
+        bodyGain.gain.exponentialRampToValueAtTime(0.24 * gainScale, startTime + 0.002);
+        bodyGain.gain.exponentialRampToValueAtTime(0.0001, startTime + reportDwell * 1.15);
+
+        const pan = createPan(panPosition);
+
+        noise.connect(crackFilter).connect(crackGain).connect(pan);
+        body.connect(bodyGain).connect(pan);
+        pan.connect(master);
+
+        noise.start(startTime, Math.random() * 0.7);
+        noise.stop(startTime + reportDwell + 0.02);
+        body.start(startTime);
+        body.stop(startTime + reportDwell * 1.2 + 0.02);
+      }
+
+      function scheduleCasing(startTime) {
+        const pan = createPan(Math.random() * 1.8 - 0.9);
+        const casingGain = context.createGain();
+        const base = 2700 + Math.random() * 2300;
+
+        casingGain.gain.setValueAtTime(0.0001, startTime);
+        casingGain.gain.exponentialRampToValueAtTime(0.012 + Math.random() * 0.009, startTime + 0.001);
+        casingGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.055 + Math.random() * 0.045);
+        casingGain.connect(pan).connect(master);
+
+        [1, 1.43, 2.07].forEach((ratio, index) => {
+          const mode = context.createOscillator();
+          const modeGain = context.createGain();
+          mode.type = index === 0 ? "sine" : "triangle";
+          mode.frequency.value = base * ratio;
+          modeGain.gain.value = 1 / (index + 1);
+          mode.connect(modeGain).connect(casingGain);
+          mode.start(startTime);
+          mode.stop(startTime + 0.11);
+        });
+      }
+
+      function scheduleGunEvent(startTime) {
+        const drift = 0.97 + Math.random() * 0.06;
+        scheduleReport(startTime, drift, -0.23, 1.0);
+        scheduleReport(startTime + 0.014 + Math.random() * 0.012, 2 - drift, 0.23, 0.76);
+
+        if (Math.random() < 0.38) {
+          scheduleCasing(startTime + 0.075 + Math.random() * 0.19);
+        }
+      }
+
+      function schedulerTick() {
+        if (!firing || !context) return;
+        const horizon = context.currentTime + 0.055;
+        while (nextEventTime < horizon) {
+          scheduleGunEvent(nextEventTime);
+          nextEventTime += 1 / Number(frequency.value);
+        }
+      }
+
+      function showAudioError(error) {
+        firing = false;
+        if (scheduler !== null) {
+          window.clearInterval(scheduler);
+          scheduler = null;
+        }
+        fireButton.setAttribute("aria-pressed", "false");
+        fireButton.textContent = "Hold to fire";
+        status.textContent = `Audio unavailable: ${error.message || error}`;
+        status.classList.remove("live");
+        console.error(error);
+      }
+
+      function startFiring(event) {
+        if (event) event.preventDefault();
+        if (firing) return;
+        try {
+          ensureAudio();
+          const resumeResult = context.state === "suspended" ? context.resume() : null;
+          firing = true;
+          fireButton.setAttribute("aria-pressed", "true");
+          fireButton.textContent = "Firing — release to stop";
+          status.textContent = "LIVE — adjust sliders while holding.";
+          status.classList.add("live");
+          nextEventTime = context.currentTime + 0.015;
+          schedulerTick();
+          scheduler = window.setInterval(schedulerTick, 15);
+          if (resumeResult && typeof resumeResult.catch === "function") {
+            resumeResult.catch(showAudioError);
+          }
+        } catch (error) {
+          showAudioError(error);
+        }
+      }
+
+      function stopFiring(event) {
+        if (event) event.preventDefault();
+        if (!firing) return;
+        firing = false;
+        if (scheduler !== null) {
+          window.clearInterval(scheduler);
+          scheduler = null;
+        }
+        fireButton.setAttribute("aria-pressed", "false");
+        fireButton.textContent = "Hold to fire";
+        status.textContent = "Stopped — hold again to compare settings.";
+        status.classList.remove("live");
+      }
+
+      [frequency, dwell, tone].forEach((control) => {
+        control.addEventListener("input", updateLabels);
+      });
+
+      ["selectstart", "dragstart", "contextmenu", "click"].forEach((eventName) => {
+        fireButton.addEventListener(eventName, (event) => event.preventDefault());
+      });
+
+      // Register every common input family. Browsers may synthesize a mouse
+      // event after touch/pointer input; the `firing` guard makes duplicates
+      // harmless and is more reliable than guessing the viewer's capabilities.
+      fireButton.addEventListener("pointerdown", startFiring);
+      fireButton.addEventListener("mousedown", startFiring);
+      fireButton.addEventListener("touchstart", startFiring, { passive: false });
+      fireButton.addEventListener("pointerup", stopFiring);
+      fireButton.addEventListener("mouseup", stopFiring);
+      fireButton.addEventListener("touchend", stopFiring, { passive: false });
+      fireButton.addEventListener("pointercancel", stopFiring);
+      fireButton.addEventListener("touchcancel", stopFiring, { passive: false });
+      window.addEventListener("pointerup", stopFiring);
+      window.addEventListener("mouseup", stopFiring);
+      window.addEventListener("touchend", stopFiring, { passive: false });
+      window.addEventListener("pointercancel", stopFiring);
+      window.addEventListener("touchcancel", stopFiring, { passive: false });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.code === "Space" && !event.repeat) startFiring(event);
+      });
+      window.addEventListener("keyup", (event) => {
+        if (event.code === "Space") stopFiring(event);
+      });
+      window.addEventListener("blur", stopFiring);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) stopFiring();
+      });
+
+      const audioAvailable = Boolean(window.AudioContext || window.webkitAudioContext);
+      environment.textContent = audioAvailable
+        ? "JavaScript active • Web Audio available • hold input ready"
+        : "JavaScript active • Web Audio unavailable in this viewer";
+      environment.classList.toggle("ok", audioAvailable);
+      updateLabels();
+    })();
+  </script>
+</body>
+</html>
